@@ -140,18 +140,18 @@ export default function App() {
   const pendingCount = entries.filter(e => e.status === 'PENDING_SYNC').length;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-12">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-12">
       
       {/* APP BAR */}
-      <nav className="bg-[#1E40AF] text-white sticky top-0 z-50 shadow-md">
+      <nav className="bg-white text-slate-900 sticky top-0 z-50 shadow-sm border-b border-slate-100">
         <div className="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-1.5 rounded-lg border border-white/30">
+            <div className="bg-[#1E40AF] text-white p-1.5 rounded-lg border border-blue-800">
               <span className="font-black text-xs">QC</span>
             </div>
             <div>
               <h1 className="font-bold text-sm leading-none">Field Agent Portal</h1>
-              <p className="text-[10px] uppercase tracking-widest text-blue-200 mt-0.5">Database Connected</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Database Connected</p>
             </div>
           </div>
           
@@ -198,10 +198,10 @@ export default function App() {
         )}
 
         {/* CENSUS FORM */}
-        <section className="bg-white rounded-3xl shadow-lg shadow-slate-200/50 p-6 border border-slate-100">
+        <section className="bg-white rounded-3xl shadow-sm p-6 border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-[#0D9488]" />
+              <UserPlus className="w-5 h-5 text-[#1E40AF]" />
               New Census Entry
             </h2>
           </div>
@@ -255,7 +255,7 @@ export default function App() {
                   value={steps}
                   onChange={(e) => setSteps(e.target.value)}
                   placeholder="e.g. 5000" 
-                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xl font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none"
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-2xl font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1.5">
                   <button type="button" onClick={() => setSteps(prev => String((parseInt(prev||0) + 500)))} className="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors">+500</button>
@@ -275,16 +275,16 @@ export default function App() {
                   value={mins}
                   onChange={(e) => setMins(e.target.value)}
                   placeholder="Total minutes" 
-                  className="flex-grow p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-900 focus:border-[#1E40AF] transition-all outline-none"
+                  className="flex-grow p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-2xl font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none"
                 />
               </div>
             </div>
 
             <button 
               type="submit"
-              className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+              className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all active:scale-95 ${
                 isOnline 
-                  ? 'bg-[#0D9488] text-white shadow-lg shadow-teal-900/20 hover:bg-teal-700' 
+                  ? 'bg-[#1E40AF] text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800' 
                   : 'bg-slate-800 text-white shadow-lg shadow-slate-900/20 hover:bg-slate-700'
               }`}
             >
@@ -317,15 +317,15 @@ export default function App() {
                 </div>
                 <div>
                   {entry.status === 'SYNCED' ? (
-                    <span className="flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-600 px-2.5 py-1 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-teal-50 text-teal-600 px-2.5 py-1 rounded-full">
                       <CheckCircle2 className="w-3 h-3" /> SAVED TO DB
                     </span>
                   ) : entry.status === 'SYNCING' ? (
-                    <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">
                       <CloudUpload className="w-3 h-3 animate-pulse" /> SYNCING...
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded-md">
+                    <span className="flex items-center gap-1 text-[10px] font-bold bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full">
                       <Save className="w-3 h-3" /> OFFLINE
                     </span>
                   )}

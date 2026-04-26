@@ -150,8 +150,8 @@ export default function App() {
               <span className="font-black text-xs">QC</span>
             </div>
             <div>
-              <h1 className="font-bold text-sm leading-none">Field Agent Portal</h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Database Connected</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Field Agent Portal</h1>
+              <p className="text-slate-500 text-sm font-medium">Database Connected</p>
             </div>
           </div>
           

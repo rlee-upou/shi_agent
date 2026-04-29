@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { 
-  Wifi, WifiOff, Save, CloudUpload, UserPlus, Activity, Clock, MapPin, CheckCircle2, AlertCircle, User, Lock, Mail, LogOut
+  Wifi, WifiOff, Save, CloudUpload, UserPlus, Activity, Clock, MapPin, CheckCircle2, AlertCircle, User, Lock, Mail, LogOut, Key
 } from 'lucide-react';
 
 // ==========================================
@@ -46,6 +46,9 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
 
   // --- Authentication Listener ---
   useEffect(() => {
@@ -96,6 +99,23 @@ export default function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setPasswordMsg('');
+    
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    
+    setAuthLoading(false);
+    if (error) {
+      setPasswordMsg(error.message);
+    } else {
+      alert('Password updated successfully!');
+      setIsChangingPassword(false);
+      setNewPassword('');
+    }
   };
   // Load Barangays from database on startup
   useEffect(() => {
@@ -296,8 +316,19 @@ export default function App() {
             </div>
           </div>
           
-          {/* Controls: Logout & Network Toggle */}
+          {/* Controls: Password, Logout & Network Toggle */}
           <div className="flex items-center gap-2">
+
+            {/* NEW: Change Password Toggle */}
+            <button 
+              onClick={() => setIsChangingPassword(!isChangingPassword)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                isChangingPassword ? 'bg-[#1E40AF] text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              }`}
+            >
+              <Key className="w-3.5 h-3.5" />
+            </button>
+
             <button 
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors bg-slate-100 text-slate-500 hover:bg-slate-200"
@@ -319,6 +350,44 @@ export default function App() {
       </nav>
 
       <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+
+        {/* CHANGE PASSWORD FORM */}
+        {isChangingPassword && (
+          <section className="bg-white rounded-3xl shadow-sm p-6 border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Key className="w-5 h-5 text-[#1E40AF]" />
+                Change Password
+              </h2>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              {passwordMsg && (
+                <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-bold border border-rose-100 text-center">
+                  {passwordMsg}
+                </div>
+              )}
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> New Password
+                </label>
+                <input 
+                  type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter a secure password"
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-900 focus:border-[#1E40AF] outline-none transition-all"
+                />
+              </div>
+
+              <button 
+                type="submit" disabled={authLoading}
+                className="w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all active:scale-95 bg-[#1E40AF] text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800 disabled:opacity-70"
+              >
+                {authLoading ? 'SAVING...' : 'UPDATE PASSWORD'}
+              </button>
+            </form>
+          </section>
+        )}
         
         {/* PENDING SYNC BANNER */}
         {pendingCount > 0 && (

@@ -142,6 +142,7 @@ export default function App() {
 
     const newEntry = {
       local_id: `QC-${Math.floor(Math.random() * 9000) + 1000}`,
+      agent_id: session?.user?.id,
       barangay_id: selectedBarangay,
       ageGroup: ageGroup,
       gender: gender, // ADDED
@@ -192,6 +193,7 @@ export default function App() {
         .from('activity_logs')
         .insert([{
           resident_id: residentData.id,
+          field_agent_id: entry.agent_id,
           source_type: 'FIELD_AGENT',
           daily_steps: entry.steps,
           weekly_exercise_mins: entry.totalMins,     // UPDATED

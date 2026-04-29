@@ -219,7 +219,7 @@ export default function App() {
   };
 
   // --- RENDER AUTHENTICATION SCREEN IF NOT LOGGED IN ---
-  if (!session) {
+  if (!session || authMode === 'update_password') {
     return (
       <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-center px-4 py-12">
         <div className="max-w-md mx-auto w-full bg-white rounded-3xl shadow-sm p-8 border border-slate-100">

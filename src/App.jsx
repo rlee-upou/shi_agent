@@ -31,7 +31,11 @@ export default function App() {
   
   // Form State
   const [steps, setSteps] = useState('');
-  const [mins, setMins] = useState('');
+  const [gender, setGender] = useState('Female');
+  const [walkMins, setWalkMins] = useState('');
+  const [runMins, setRunMins] = useState('');
+  const [bikeMins, setBikeMins] = useState('');
+  const [otherMins, setOtherMins] = useState('');
   const [selectedBarangay, setSelectedBarangay] = useState('');
   const [ageGroup, setAgeGroup] = useState('25-34');
 
@@ -52,12 +56,23 @@ export default function App() {
     e.preventDefault();
     if (!steps || !selectedBarangay) return;
 
+    const w = parseInt(walkMins) || 0;
+    const r = parseInt(runMins) || 0;
+    const b = parseInt(bikeMins) || 0;
+    const o = parseInt(otherMins) || 0;
+    const totalMins = w + r + b + o;
+
     const newEntry = {
       local_id: `QC-${Math.floor(Math.random() * 9000) + 1000}`,
       barangay_id: selectedBarangay,
       ageGroup: ageGroup,
+      gender: gender, // ADDED
       steps: parseInt(steps),
-      mins: parseInt(mins) || 0,
+      walkMins: w,    // ADDED
+      runMins: r,     // ADDED
+      bikeMins: b,    // ADDED
+      otherMins: o,   // ADDED
+      totalMins: totalMins, // UPDATED from 'mins'
       status: isOnline ? 'SYNCING' : 'PENDING_SYNC',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: new Date().toISOString()
@@ -66,7 +81,10 @@ export default function App() {
     // Add to UI immediately for fast user feedback
     setEntries([newEntry, ...entries]);
     setSteps('');
-    setMins('');
+    setWalkMins('');
+    setRunMins('');
+    setBikeMins('');
+    setOtherMins('');
 
     // If online, push to database immediately
     if (isOnline) {
@@ -83,6 +101,7 @@ export default function App() {
         .insert([{
           barangay_id: parseInt(entry.barangay_id),
           age_group: entry.ageGroup,
+          gender_at_birth: entry.gender, // ADDED
           primary_source: 'FIELD_AGENT'
         }])
         .select()
@@ -97,7 +116,11 @@ export default function App() {
           resident_id: residentData.id,
           source_type: 'FIELD_AGENT',
           daily_steps: entry.steps,
-          weekly_exercise_mins: entry.mins,
+          weekly_exercise_mins: entry.totalMins,     // UPDATED
+          walking_mins_weekly: entry.walkMins,       // ADDED
+          running_mins_weekly: entry.runMins,        // ADDED
+          biking_mins_weekly: entry.bikeMins,        // ADDED
+          other_sports_mins_weekly: entry.otherMins, // ADDED
           local_timestamp: entry.timestamp,
           is_synced: true
         }]);
@@ -224,23 +247,43 @@ export default function App() {
               </select>
             </div>
 
-            {/* Age Group */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
-                <User className="w-3 h-3" /> Age Group
-              </label>
-              <select 
-                value={ageGroup}
-                onChange={(e) => setAgeGroup(e.target.value)}
-                className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:border-[#1E40AF] outline-none"
-              >
-                <option value="18-24">18-24 years</option>
-                <option value="25-34">25-34 years</option>
-                <option value="35-44">35-44 years</option>
-                <option value="45-54">45-54 years</option>
-                <option value="55-64">55-64 years</option>
-                <option value="65+">65+ years (Senior)</option>
-              </select>
+            {/* Wrap Demographic fields in a 2-column grid */}
+            <div className="grid grid-cols-2 gap-3">
+
+              {/* Age Group */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
+                  <User className="w-3 h-3" /> Age Group
+                </label>
+                <select 
+                  value={ageGroup}
+                  onChange={(e) => setAgeGroup(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:border-[#1E40AF] outline-none"
+                >
+                  <option value="18-24">18-24 years</option>
+                  <option value="25-34">25-34 years</option>
+                  <option value="35-44">35-44 years</option>
+                  <option value="45-54">45-54 years</option>
+                  <option value="55-64">55-64 years</option>
+                  <option value="65+">65+ years (Senior)</option>
+                </select>
+              </div>
+
+              {/* NEW Gender Block */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
+                  <User className="w-3 h-3" /> Gender
+                </label>
+                <select 
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:border-[#1E40AF] outline-none appearance-none"
+                >
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                </select>
+              </div>
+            
             </div>
 
             {/* Steps Input */}
@@ -267,15 +310,36 @@ export default function App() {
             {/* Mins Input */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Weekly Exercise Mins
+                <Clock className="w-3 h-3" /> Weekly Exercise Breakdown (Mins)
               </label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <input 
                   type="number" 
-                  value={mins}
-                  onChange={(e) => setMins(e.target.value)}
-                  placeholder="Total minutes" 
-                  className="flex-grow p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-2xl font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none"
+                  value={walkMins}
+                  onChange={(e) => setWalkMins(e.target.value)}
+                  placeholder="Walking" 
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none placeholder:text-sm placeholder:font-bold"
+                />
+                <input 
+                  type="number" 
+                  value={runMins}
+                  onChange={(e) => setRunMins(e.target.value)}
+                  placeholder="Running" 
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none placeholder:text-sm placeholder:font-bold"
+                />
+                <input 
+                  type="number" 
+                  value={bikeMins}
+                  onChange={(e) => setBikeMins(e.target.value)}
+                  placeholder="Biking" 
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none placeholder:text-sm placeholder:font-bold"
+                />
+                <input 
+                  type="number" 
+                  value={otherMins}
+                  onChange={(e) => setOtherMins(e.target.value)}
+                  placeholder="Other" 
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-lg font-black text-slate-900 focus:border-[#1E40AF] transition-all outline-none placeholder:text-sm placeholder:font-bold"
                 />
               </div>
             </div>
@@ -312,7 +376,7 @@ export default function App() {
                   </div>
                   <div className="text-xs font-medium text-slate-500 flex gap-3">
                     <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> {entry.steps.toLocaleString()}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {entry.mins}m</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {entry.totalMins}m</span>
                   </div>
                 </div>
                 <div>

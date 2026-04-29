@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { 
-  Wifi, WifiOff, Save, CloudUpload, UserPlus, Activity, Clock, MapPin, CheckCircle2, AlertCircle, User
+  Wifi, WifiOff, Save, CloudUpload, UserPlus, Activity, Clock, MapPin, CheckCircle2, AlertCircle, User, Lock, Mail, LogOut
 } from 'lucide-react';
 
 // ==========================================
@@ -39,6 +39,64 @@ export default function App() {
   const [selectedBarangay, setSelectedBarangay] = useState('');
   const [ageGroup, setAgeGroup] = useState('25-34');
 
+  // --- Auth State ---
+  const [session, setSession] = useState(null);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'update_password'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  // --- Authentication Listener ---
+  useEffect(() => {
+    // 1. Check if they arrived via an email invite/recovery link
+    if (window.location.hash.includes('type=invite') || window.location.hash.includes('type=recovery')) {
+      setAuthMode('update_password');
+    }
+
+    // 2. Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // 3. Listen for changes (logins, logouts)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (event === 'PASSWORD_RECOVERY') setAuthMode('update_password');
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // --- Auth Functions ---
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+
+    try {
+      if (authMode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else if (authMode === 'update_password') {
+        // This is for invited users setting their password for the first time
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        setAuthMode('login');
+        alert('Password set successfully! You are now securely logged in.');
+        // Clean up the URL hash
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch (err) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
   // Load Barangays from database on startup
   useEffect(() => {
     async function fetchBarangays() {
@@ -160,6 +218,66 @@ export default function App() {
     setIsSyncing(false);
   };
 
+  // --- RENDER AUTHENTICATION SCREEN IF NOT LOGGED IN ---
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col justify-center px-4 py-12">
+        <div className="max-w-md mx-auto w-full bg-white rounded-3xl shadow-sm p-8 border border-slate-100">
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="bg-[#1E40AF] text-white p-3 rounded-2xl border border-blue-800 mb-4">
+              <span className="font-black text-xl">QC</span>
+            </div>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              {authMode === 'login' ? 'Agent Login' : 'Set Your Password'}
+            </h1>
+            <p className="text-slate-500 text-sm font-medium mt-1">
+              {authMode === 'login' 
+                ? 'Welcome back to the Smart Health Index' 
+                : 'Please create a secure password to activate your account.'}
+            </p>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {authError && (
+              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-sm font-bold border border-rose-100 text-center">
+                {authError}
+              </div>
+            )}
+
+            {authMode === 'login' && (
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
+                  <Mail className="w-3 h-3" /> Email Address
+                </label>
+                <input 
+                  type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-[#1E40AF] outline-none transition-all"
+                />
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black text-[#1E40AF] uppercase tracking-widest flex items-center gap-1">
+                <Lock className="w-3 h-3" /> {authMode === 'login' ? 'Password' : 'New Password'}
+              </label>
+              <input 
+                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:border-[#1E40AF] outline-none transition-all"
+              />
+            </div>
+
+            <button 
+              type="submit" disabled={authLoading}
+              className="w-full py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition-all active:scale-95 bg-[#1E40AF] text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800 mt-2 disabled:opacity-70"
+            >
+              {authLoading ? 'PLEASE WAIT...' : (authMode === 'login' ? 'LOG IN' : 'SAVE & CONTINUE')}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   const pendingCount = entries.filter(e => e.status === 'PENDING_SYNC').length;
 
   return (
@@ -178,16 +296,25 @@ export default function App() {
             </div>
           </div>
           
-          {/* Network Toggle */}
-          <button 
-            onClick={() => setIsOnline(!isOnline)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
-              isOnline ? 'bg-teal-500/20 text-teal-300 border border-teal-500/50' : 'bg-rose-500/20 text-rose-300 border border-rose-500/50'
-            }`}
-          >
-            {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-            {isOnline ? 'ONLINE' : 'OFFLINE'}
-          </button>
+          {/* Controls: Logout & Network Toggle */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors bg-slate-100 text-slate-500 hover:bg-slate-200"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+            
+            <button 
+              onClick={() => setIsOnline(!isOnline)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                isOnline ? 'bg-teal-500/20 text-teal-700 border border-teal-500/50' : 'bg-rose-500/20 text-rose-700 border border-rose-500/50'
+              }`}
+            >
+              {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+              {isOnline ? 'ONLINE' : 'OFFLINE'}
+            </button>
+          </div>
         </div>
       </nav>
 

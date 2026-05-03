@@ -25,8 +25,30 @@ export default function App() {
   // State Management
   const [isOnline, setIsOnline] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+
   const [sessionTarget] = useState(50);
-  const [entries, setEntries] = useState([]);
+  // --- PREVIOUS CODE ---
+  // const [entries, setEntries] = useState([]);
+
+  // --- NEW CODE ---
+  const [entries, setEntries] = useState(() => {
+    const savedLogs = localStorage.getItem('shi_agent_pending_logs');
+    if (savedLogs) {
+      try {
+        const parsedLogs = JSON.parse(savedLogs);
+        // CRITICAL SAFETY CATCH: If the user closed the browser while an item 
+        // was stuck in 'SYNCING', revert it to 'PENDING_SYNC' on reload so it isn't stuck forever.
+        return parsedLogs.map(entry => 
+          entry.status === 'SYNCING' ? { ...entry, status: 'PENDING_SYNC' } : entry
+        );
+      } catch (error) {
+        console.error("Failed to parse local logs", error);
+        return [];
+      }
+    }
+    return [];
+  });
+
   const [barangays, setBarangays] = useState([]);
   
   // Form State
@@ -128,6 +150,14 @@ export default function App() {
     }
     fetchBarangays();
   }, []);
+
+  useEffect(() => {
+    // Filter the array: We ONLY want to save items to the hard drive 
+    // if they have not successfully reached the database yet.
+    const itemsToSave = entries.filter(entry => entry.status !== 'SYNCED');
+    
+    localStorage.setItem('shi_agent_pending_logs', JSON.stringify(itemsToSave));
+  }, [entries]);
 
   // Handle Form Submission
   const handleLogData = async (e) => {

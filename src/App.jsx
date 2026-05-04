@@ -73,20 +73,57 @@ export default function App() {
   const [passwordMsg, setPasswordMsg] = useState('');
 
   // --- Authentication Listener ---
+
+  // --- Auth & Role Verification ---
+  const verifyRole = async (currentSession) => {
+    if (!currentSession) {
+      setSession(null);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('id', currentSession.user.id)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.role === 'field_agent') {
+        setSession(currentSession); // Grant access
+      } else {
+        await supabase.auth.signOut(); // Force logout
+        setAuthError('Access denied: Field Agent privileges required.');
+        setSession(null);
+      }
+    } catch (err) {
+      await supabase.auth.signOut();
+      setAuthError('Authentication failed or user role not found.');
+      setSession(null);
+    }
+  };
+
+
+
+  // --- Authentication Listener ---
   useEffect(() => {
     // 1. Check if they arrived via an email invite/recovery link
     if (window.location.hash.includes('type=invite') || window.location.hash.includes('type=recovery')) {
       setAuthMode('update_password');
     }
 
-    // 2. Get initial session
+    // 2. Get initial session and verify role
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+      if (session) verifyRole(session);
     });
 
     // 3. Listen for changes (logins, logouts)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
+      if (event === 'SIGNED_IN') {
+        verifyRole(session);
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
+      }
       if (event === 'PASSWORD_RECOVERY') setAuthMode('update_password');
     });
 

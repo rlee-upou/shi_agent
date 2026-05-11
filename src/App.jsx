@@ -8,17 +8,12 @@ import {
 // SUPABASE INITIALIZATION
 // ==========================================
 
-// IMPORTANT FOR VS CODE: 
-// Uncomment the line below when you move to your local VS Code environment!
 import { createClient } from '@supabase/supabase-js';
-
 
 // For local VS Code, you can use your .env file by replacing the two lines below with:
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 
-//const supabaseUrl = 'https://placeholder.supabase.co';
-//const supabaseKey = 'placeholder-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function App() {
@@ -27,10 +22,7 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [sessionTarget] = useState(50);
-  // --- PREVIOUS CODE ---
-  // const [entries, setEntries] = useState([]);
 
-  // --- NEW CODE ---
   const [entries, setEntries] = useState(() => {
     const savedLogs = localStorage.getItem('shi_agent_pending_logs');
     if (savedLogs) {
@@ -102,7 +94,6 @@ export default function App() {
       setSession(null);
     }
   };
-
 
 
   // --- Authentication Listener ---
